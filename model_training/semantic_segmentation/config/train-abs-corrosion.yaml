@@ -1,0 +1,69 @@
+---
+project: ABS Corrosion
+experiment_desc: &EXPERIMENT_DESC espnet_experiment
+
+experiment:
+  folder: *EXPERIMENT_DESC
+  name: model
+
+train:
+  files_a: /home/fisz/PycharmProjects/ABS_Corrosion/cleaned_data/train/images/*.jpg
+  files_b: /home/fisz/PycharmProjects/ABS_Corrosion/cleaned_data/train/masks/*.png
+  transform:
+    size: &SIZE 256
+    augmentation_scope: strong
+    images_normalization: &IMAGES_NORMALIZATION default
+    images_output_format_type: &IMAGES_OUTPUT_FORMAT_TYPE float
+    masks_normalization: &MASKS_NORMALIZATION div255
+    masks_output_format_type: &MASKS_FORMAT_TYPE float
+    size_transform: random
+  norm: imagenet
+  preload: &PRELOAD
+  preload_size: &PRELOAD_SIZE 500
+  bounds: [0, 0.85]
+
+val:
+  files_a: /home/fisz/PycharmProjects/ABS_Corrosion/cleaned_data/val/images/*.jpg
+  files_b: /home/fisz/PycharmProjects/ABS_Corrosion/cleaned_data/val/masks/*.png
+  transform:
+    size: *SIZE
+    augmentation_scope: weak
+    images_normalization: *IMAGES_NORMALIZATION
+    images_output_format_type: *IMAGES_OUTPUT_FORMAT_TYPE
+    masks_normalization: *MASKS_NORMALIZATION
+    masks_output_format_type: *MASKS_FORMAT_TYPE
+    size_transform: center
+  norm: imagenet
+  preload: *PRELOAD
+  preload_size: *PRELOAD_SIZE
+  bounds: [0, 0.15]
+
+training_monitor:
+  method: time
+  interval: 600
+
+task: &TASK task
+phase: train
+warmup_num: 3
+model:
+  arch: unet_seresnext
+  depth: 10
+  loss:
+    name: mixed_loss
+  classes: 2
+  pretrained: True
+  pretrained_weights_path: /home/fisz/PycharmProjects/CV-pipeline/espnetv2_s_1.0.pth
+  task: *TASK
+  norm_layer: batch
+num_epochs: 5
+batch_size: 4
+optimizer:
+  name: adam
+  lr: 0.0001
+scheduler:
+  name: plateau
+  mode: max
+  patience: 5
+  factor: 0.5
+  min_lr: 0.0000001
+early_stopping: 25

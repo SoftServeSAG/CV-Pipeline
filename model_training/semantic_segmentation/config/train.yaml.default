@@ -1,0 +1,58 @@
+---
+project: problem_segmentation
+experiment_desc: &EXPERIMENT_DESC unet_seresnext
+
+experiment:
+  folder: *EXPERIMENT_DESC
+  name: model
+
+train:
+  files_a: /root/data/original/*.jpg
+  files_b: /root/data/mask/*.jpg
+  size: &SIZE 256
+  scope: strong
+  size_transform: random
+  norm: imagenet
+  preload: &PRELOAD
+  preload_size: &PRELOAD_SIZE 500
+  bounds: [0, 0.85]
+
+val:
+  files_a: /root/data/*.jpg
+  files_b: /root/data/mask/*.jpg
+  size: *SIZE
+  scope: weak
+  size_transform: center
+  norm: imagenet
+  preload: *PRELOAD
+  preload_size: *PRELOAD_SIZE
+  bounds: [0, 0.15]
+
+training_monitor:
+  method: time
+  interval: 600
+
+task: &TASK task
+phase: train
+warmup_num: 3
+model:
+  arch: unet_seresnext
+  depth: 34
+  loss:
+    name: mixed_loss
+  classes: 1
+  pretrained: True
+  task: *TASK
+  norm_layer: batch
+num_epochs: 100
+batch_size: 8
+optimizer:
+  name: adam
+  lr: 0.0001
+scheduler:
+  name: plateau
+  mode: max
+  patience: 5
+  factor: 0.5
+  min_lr: 0.0000001
+early_stopping: 25

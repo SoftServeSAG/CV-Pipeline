@@ -1,0 +1,68 @@
+---
+project: problem_segmentation
+experiment_desc: &EXPERIMENT_DESC unet_resnet
+
+experiment:
+  folder: *EXPERIMENT_DESC
+  name: model
+
+train:
+  files_a: test_data/images/gt*.jpg
+  files_b: test_data/images/mask*.png
+  transform:
+    size: &SIZE 256
+    augmentation_scope: strong
+    images_normalization: &IMAGES_NORMALIZATION default
+    images_output_format_type: &IMAGES_OUTPUT_FORMAT_TYPE float
+    masks_normalization: &MASKS_NORMALIZATION none
+    masks_output_format_type: &MASKS_FORMAT_TYPE float
+    size_transform: random
+  norm: imagenet
+  preload: &PRELOAD True
+  preload_size: &PRELOAD_SIZE 500
+  bounds: [0, 0.5]
+
+val:
+  files_a: test_data/images/gt*.jpg
+  files_b: test_data/images/mask*.png
+  transform:
+    size: *SIZE
+    augmentation_scope: weak
+    images_normalization: *IMAGES_NORMALIZATION
+    images_output_format_type: *IMAGES_OUTPUT_FORMAT_TYPE
+    masks_normalization: *MASKS_NORMALIZATION
+    masks_output_format_type: *MASKS_FORMAT_TYPE
+    size_transform: center
+  norm: imagenet
+  preload: *PRELOAD
+  preload_size: *PRELOAD_SIZE
+  bounds: [0, 0.5]
+
+training_monitor:
+  method: epochs
+  interval: 0
+
+task: &TASK task
+phase: train
+warmup_num: 3
+model:
+  arch: unet_resnet
+  depth: 34
+  loss:
+    name: iou_loss
+  classes: 1
+  pretrained: False
+  task: *TASK
+  norm_layer: batch
+num_epochs: 1
+batch_size: 8
+optimizer:
+  name: sgd
+  lr: 0.0001
+scheduler:
+  name: plateau
+  mode: max
+  patience: 5
+  factor: 0.5
+  min_lr: 0.0000001
+early_stopping: 25
